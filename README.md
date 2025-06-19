@@ -30,23 +30,23 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
     The project requires google chrome to function, I am using version 137.0.7151.55, but hopefully the latest version should work (let me know if it doesn't).
 
-3.  **Install Miniconda**
+4.  **Install Miniconda**
 
     To manage all the python packages this project uses I use the ```conda``` package manager. Miniconda is a light-weight distribution of this package manager. Follow the installation instructions [here](https://www.anaconda.com/docs/getting-started/miniconda/install). If you don't want the (base) environment to activate each time you open your command prompt, run this:
 
     ```conda config --set auto_activate_base false```
 
-4.  **Install the ```conda``` environment**
+5.  **Install the ```conda``` environment**
 
     Run ```conda env create -f environment.yaml``` to create a conda environment and install all the required python packages into it. It's possible this may take a while.
 
-5.  **Activate the ```conda``` environment**
+6.  **Activate the ```conda``` environment**
 
     Run ```conda activate album-downloader-env```.
 
-6.  **Navigate to src/ in the project directory**
+7.  **Navigate to src/ in the project directory**
 
-7.  **Run get_album.py**
+8.  **Run get_album.py**
 
     Hooray! If all the previous steps went smoothly, you can now finally start using the album downloader. There are two ways to use it.
 
