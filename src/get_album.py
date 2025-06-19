@@ -1,0 +1,391 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="seleniumwire")
+warnings.filterwarnings("ignore", category=RuntimeWarning, message="coroutine '.*'' was never awaited")
+
+import musicbrainzngs as mbz
+import requests
+from googleapiclient.discovery import build
+from seleniumwire import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import os
+import eyed3
+from PIL import Image
+from io import BytesIO
+from pathlib import Path
+import shutil
+import subprocess
+import utils as ut
+import time
+from isodate import parse_duration
+from dotenv import load_dotenv
+from rapidfuzz.fuzz import partial_ratio
+import tempfile
+import argparse
+import uuid
+
+
+load_dotenv()
+BD = Path(os.getenv("BASE_DIRECTORY"))
+BD.mkdir(parents=True, exist_ok=True)
+SONGS = Path(os.getenv("SONGS_DIRECTORY"))
+SONGS.mkdir(parents=True, exist_ok=True)
+ALBUM_ART = Path(os.getenv("ALBUM_ART_DIRECTORY"))
+ALBUM_ART.mkdir(parents=True, exist_ok=True)
+TEMP_ALBUM = Path(tempfile.mkdtemp())
+TEMP_ART = Path(tempfile.mkdtemp())
+
+YT_API_KEY = os.getenv("YT_API_KEY")
+
+TIMEOUT = 60 # s
+THUMBNAIL_SIZE = (500, 500)
+DURATION_TOLERANCE = 5 # s
+MIN_FUZZY = 90
+
+SERVICE = Service(ChromeDriverManager().install())
+
+youtube = build("youtube", "v3", developerKey=YT_API_KEY)
+mbz.set_useragent("testing", "0.1")
+
+chrome_prefs = {
+    # stop automatic downloads, handle them manually using requests
+    "download_restrictions": 3
+}
+options = Options()
+options.add_experimental_option("prefs", chrome_prefs)
+options.add_argument("--headless")
+
+
+class Album:
+    def __init__(
+        self,
+        artist=None,
+        album_title=None,
+        release_id=None
+    ):
+        self.artist = artist
+        self.album_title = album_title
+        self.release_id = release_id
+        self.album_art_path = None
+        self.track_list = []
+
+    def get_artist_and_album_title(self):
+        release_data = mbz.get_release_by_id(self.release_id, includes=["artists"])
+        self.artist = release_data["release"]["artist-credit"][0]["artist"]["name"]
+        self.album_title = release_data["release"]["title"]
+
+    def has_album_art(self):
+        try:
+            images = mbz.get_image_list(self.release_id)
+            return len(images.get("images", [])) > 0
+        except mbz.ResponseError as e:
+            if e.cause.code == 404:
+                return False
+            else:
+                raise
+
+    def get_release_id(self):
+        release_group_result = mbz.search_release_groups(
+            artist=self.artist,
+            releasegroup=self.album_title,
+            type="album",
+            status="official"
+        )
+        for release_group in release_group_result["release-group-list"]:
+            if release_group["title"].lower() == self.album_title.lower():
+                release_group_id = release_group["id"]
+                break
+        else:
+            raise ValueError("Album not found")
+        releases = mbz.get_release_group_by_id(
+            release_group_id,
+            includes=["releases"]
+        )["release-group"]["release-list"]
+        for release in releases:
+            self.release_id = release["id"]
+            if self.has_album_art():
+                return
+            else:
+                continue
+        # if can't find album art, default to first release
+        self.release_id = releases[0]["id"]
+
+    def get_album_art(self):
+        url = f"https://coverartarchive.org/release/{self.release_id}/front"
+        response = requests.get(url)
+        if response.status_code == 200:
+            image = Image.open(BytesIO(response.content))
+            image = image.convert("RGB")
+            image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
+            self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
+            image.save(self.album_art_path, format="JPEG", quality=85)
+            print("✅ Downloaded album art")
+            try:
+                subprocess.run(["kitten", "icat", self.album_art_path])
+            except:
+                pass
+        else:
+            print("❌ Album art not available")
+            shutil.rmtree(TEMP_ART)
+
+    def get_track_list(self):
+        track_list = mbz.get_release_by_id(
+            self.release_id,
+            includes=["recordings"]
+        )["release"]["medium-list"][0]["track-list"]
+        print("📝 Tracklist:")
+        for track in track_list:
+            title = track["recording"]["title"]
+            track_number = track["position"]
+            duration = int(track["recording"]["length"]) / 1000 # ms -> s
+            self.track_list.append(
+                Song(
+                    title,
+                    track_number,
+                    duration,
+                    self.artist,
+                    self.album_title,
+                    self.album_art_path,
+                )
+            )
+            ut.print_song_title(title, track_number, duration)
+
+    def get_youtube_urls(self):
+        for song in self.track_list:
+            song._get_youtube_url()
+
+    def download_mp3s(self):
+        for song in self.track_list:
+            song._download_mp3()
+            song._set_metadata()
+        try:
+            shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
+            shutil.rmtree(TEMP_ART)
+        except:
+            pass
+        for mp3_file in os.listdir(TEMP_ALBUM):
+            shutil.move(TEMP_ALBUM / mp3_file, SONGS)
+        shutil.rmtree(TEMP_ALBUM)
+
+
+class Song:
+    def __init__(
+        self,
+        title,
+        track_number,
+        duration,
+        artist,
+        album_title,
+        album_art
+    ):
+        self.title = title
+        self.mp3_file_name = f"{ut.sanitize(self.title)}.1.mp3"
+        self.track_number = track_number
+        self.duration = duration
+        self.artist = artist
+        self.album_title = album_title
+        self.album_art_path = album_art
+        self.youtube_url = None
+
+    def _get_youtube_url(self):
+        ut.print_song_title(self.title, self.track_number, self.duration)
+
+        search_query = f"{self.artist} {self.title} Topic"
+        search_items = youtube.search().list(
+            q=search_query,
+            part="id",
+            type="video",
+            videoCategoryId="10",
+            maxResults=10,
+            fields="items(id(videoId))"
+        ).execute()["items"]
+        video_ids = [item["id"]["videoId"] for item in search_items]
+
+        videos_items = youtube.videos().list(
+            part="contentDetails,snippet",
+            id=",".join(video_ids),
+            fields="items(contentDetails(duration),snippet(title,description))"
+        ).execute()["items"]
+        durations_iso = [item["contentDetails"]["duration"] for item in videos_items]
+        durations = [parse_duration(d).total_seconds() for d in durations_iso]
+        video_titles = [item["snippet"]["title"] for item in videos_items]
+        descriptions = [item["snippet"]["description"] for item in videos_items]
+
+        warnings_videos = []
+        warning_scores = []
+        for duration, video_title, description in zip(durations, video_titles, descriptions):
+            warnings_video = []
+            warning_score = 0
+            if (
+                (partial_ratio(self.title.lower(), description.lower()) < MIN_FUZZY) or
+                (partial_ratio(self.artist.lower(), description.lower()) < MIN_FUZZY) or
+                ("Auto-generated by YouTube." not in description)
+            ):
+                warnings_video.append(
+                    "⚠️ Possibly not from official channel"
+                )
+                warning_score += 1
+            if partial_ratio(self.title.lower(), video_title.lower()) < MIN_FUZZY:
+                warnings_video.append(
+                    "⚠️ Song title not in video title"
+                )
+                warning_score += 2
+            if abs(duration - self.duration) > DURATION_TOLERANCE:
+                warnings_video.append(
+                    f"⚠️ Duration outside {DURATION_TOLERANCE} s tolerance"
+                )
+                warning_score += 4
+            warnings_videos.append(warnings_video)
+            warning_scores.append(warning_score)
+        best_i = 0
+        best_warning_score = 8
+        for i, warning_score in enumerate(warning_scores):
+            if warning_score < best_warning_score:
+                best_warning_score = warning_score
+                best_i = i
+                if warning_score == 0:
+                    self.youtube_url = f"https://www.youtube.com/watch?v={video_ids[best_i]}"
+                    print(f"\t✅ {self.youtube_url}")
+                    return
+        # falls back on the first result if no perfect result found
+        self.youtube_url = f"https://www.youtube.com/watch?v={video_ids[0]}"
+        if warning_scores[0] >= 4:
+            print(f"\t🔴 {self.youtube_url}")
+        elif (warning_scores[0] >= 2) and (best_warning_score < 4):
+            print(f"\t🟠 {self.youtube_url}")
+        elif warning_scores[0] == 1:
+            print(f"\t🟡 {self.youtube_url}")
+        for warning in warnings_videos[0]:
+            print(f"\t    {warning}")
+
+    def _set_metadata(self):
+        audiofile = eyed3.load(TEMP_ALBUM / self.mp3_file_name)
+        audiofile.tag.clear()
+        audiofile.initTag()
+        audiofile.tag.title = self.title
+        audiofile.tag.artist = self.artist
+        audiofile.tag.album_artist = self.artist
+        audiofile.tag.album = self.album_title
+        audiofile.tag.track_num = self.track_number
+        if self.album_art_path is not None:
+            with open(self.album_art_path, "rb") as image:
+                audiofile.tag.images.set(3, image.read(), "image/jpeg")
+        audiofile.tag.save()
+        print("\t✅ Set metadata")
+
+    def _download_mp3(self):
+        ut.print_song_title(self.title, self.track_number, self.duration)
+        driver = webdriver.Chrome(service=SERVICE, options=options)
+        driver.get("https://ytmp3.la")
+        input_field = driver.find_element(By.ID, "v")
+        input_field.send_keys(self.youtube_url)
+        convert_button = driver.find_element(
+            By.XPATH,
+            "/html/body/form/div[2]/button[2]"
+        )
+        convert_button.click()
+        WebDriverWait(driver, TIMEOUT).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "/html/body/form/div[2]/button[1]")
+            )
+        )
+        download_button = driver.find_element(
+            By.XPATH,
+            "/html/body/form/div[2]/button[1]"
+        )
+        urls_before_click = [i.url for i in driver.requests]
+        download_button.click()
+        time.sleep(0.5)
+        urls_after_click = [i.url for i in driver.requests]
+        new_urls = [i for i in urls_after_click if i not in urls_before_click]
+        for url in new_urls:
+            if ("mp3" in url) and ("download" in url) and ("google" not in url):
+                download_url = url
+                break
+        response = requests.get(download_url)
+        response.raise_for_status()
+        with open(TEMP_ALBUM / self.mp3_file_name, "wb") as file:
+            file.write(response.content)
+        mp3_file_name_old = self.mp3_file_name
+        # increment number in filename if a song of the same name already
+        # exists in the SONGS directory
+        while self.mp3_file_name in os.listdir(SONGS):
+            split_filename = self.mp3_file_name.split(".")
+            split_filename[-2] = str(int(split_filename[-2]) + 1)
+            self.mp3_file_name = ".".join(split_filename)
+        shutil.move(
+            TEMP_ALBUM / mp3_file_name_old,
+            TEMP_ALBUM / self.mp3_file_name
+        )
+        driver.quit()
+        print("\t✅ Downloaded mp3")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
+    )
+    parser.add_argument("--artist", type=str, help="Artist name")
+    parser.add_argument("--album", type=str, help="Album name")
+    parser.add_argument("--mbid", type=str, help="MusicBrainz release ID or release page URL")
+    args = parser.parse_args()
+    if args.mbid:
+        if args.artist or args.album:
+            parser.error("💀 Cannot use --mbid with --artist or --album")
+    elif args.artist and args.album:
+        pass
+    else:
+        parser.error("💀 You must provide either --mbid OR both --artist and --album")
+
+    ARTIST = args.artist
+    ALBUM_TITLE = args.album
+    if args.mbid is not None:
+        try:
+            RELEASE_ID = args.mbid.split("/")[-1]
+            uuid.UUID(RELEASE_ID)
+        except:
+            parser.error("💀 Invalid Musicbrains release ID")
+    else:
+        RELEASE_ID = args.mbid
+
+    try:
+        album = Album(
+            artist=ARTIST,
+            album_title=ALBUM_TITLE,
+            release_id=RELEASE_ID,
+        )
+        if album.release_id is None:
+            album.get_release_id()
+            album.get_artist_and_album_title()
+        else:
+            album.get_artist_and_album_title()
+        print(f"🎸 Artist:\t{album.artist}")
+        print(f"💿 Album:\t{album.album_title}")
+        print("🌐 Musicbrainz release page:")
+        print(f"    🔗 https://www.musicbrainz.org/release/{album.release_id}")
+        if album.has_album_art():
+            album.get_album_art()
+        else:
+            print("❌ Album art not available")
+        album.get_track_list()
+        if input("🔗 Get Youtube URLs? ([Y]/n): ").lower() != "n":
+            album.get_youtube_urls()
+        else:
+            exit()
+        if input("🎶 Download songs? ([Y]/n): ").lower() != "n":
+            album.download_mp3s()
+        else:
+            exit()
+    except:
+        print("💀 Something went wrong")
+        raise
+    finally:
+        print("🧹 Cleaning up")
+        for temp_dir in [TEMP_ALBUM, TEMP_ART]:
+            if os.path.isdir(temp_dir):
+                shutil.rmtree(temp_dir)
+    print("🎷 Enjoy!")
