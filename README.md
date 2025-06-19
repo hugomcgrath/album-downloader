@@ -26,6 +26,10 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
     This project uses the YouTube Data API and this means you, the user, need to supply your own API key. Follow the instructions [here](https://developers.google.com/youtube/v3/getting-started). Once you get your API key, copy it into the ```.env.example``` file provided in the project directory and follow the instructions in the file.
 
+3.  **Install the latest version of Google Chrome**
+
+    The project requires google chrome to function, I am using version 137.0.7151.55, but hopefully the latest version should work (let me know if it doesn't).
+
 3.  **Install Miniconda**
 
     To manage all the python packages this project uses I use the ```conda``` package manager. Miniconda is a light-weight distribution of this package manager. Follow the installation instructions [here](https://www.anaconda.com/docs/getting-started/miniconda/install). If you don't want the (base) environment to activate each time you open your command prompt, run this:
