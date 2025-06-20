@@ -22,9 +22,7 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
     in your desired directory, otherwise click on the green <> Code button and click Download ZIP. Then unzip the file in your desired directory.
 
-    The ```git clone``` method is preferable, as it simplifies downloading the updates, you can just run ```git pull``` to get the latest version.
-
-    Otherwise you'll have to redownload the ZIP.
+    The ```git clone``` method is preferable, as it simplifies downloading the updates, you can just run ```git pull``` to get the latest version, otherwise you'll have to redownload the ZIP.
 
 2.  **Get the YouTube API key**
 
