@@ -83,7 +83,7 @@ class Album:
         self.artist = release_data["release"]["artist-credit"][0]["artist"]["name"]
         self.album_title = release_data["release"]["title"]
 
-    def has_album_art(self):
+    def _has_album_art(self):
         try:
             images = mbz.get_image_list(self.release_id)
             return len(images.get("images", [])) > 0
@@ -112,7 +112,7 @@ class Album:
         )["release-group"]["release-list"]
         for release in releases:
             self.release_id = release["id"]
-            if self.has_album_art():
+            if self._has_album_art():
                 return
             else:
                 continue
@@ -120,22 +120,25 @@ class Album:
         self.release_id = releases[0]["id"]
 
     def get_album_art(self):
-        url = f"https://coverartarchive.org/release/{self.release_id}/front"
-        response = requests.get(url)
-        if response.status_code == 200:
-            image = Image.open(BytesIO(response.content))
-            image = image.convert("RGB")
-            image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
-            self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
-            image.save(self.album_art_path, format="JPEG", quality=85)
-            print("✅ Downloaded album art")
-            try:
-                subprocess.run(["kitten", "icat", self.album_art_path])
-            except:
-                pass
+        if self._has_album_art():
+            url = f"https://coverartarchive.org/release/{self.release_id}/front"
+            response = requests.get(url)
+            if response.status_code == 200:
+                image = Image.open(BytesIO(response.content))
+                image = image.convert("RGB")
+                image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
+                self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
+                image.save(self.album_art_path, format="JPEG", quality=85)
+                print("✅ Downloaded album art")
+                try:
+                    subprocess.run(["kitten", "icat", self.album_art_path])
+                except:
+                    pass
+            else:
+                print("❌ Album art not available")
+
         else:
             print("❌ Album art not available")
-            shutil.rmtree(TEMP_ART)
 
     def get_track_list(self):
         discs = mbz.get_release_by_id(
@@ -174,12 +177,10 @@ class Album:
             song._set_metadata()
         try:
             shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
-            shutil.rmtree(TEMP_ART)
         except:
             pass
         for mp3_file in os.listdir(TEMP_ALBUM):
             shutil.move(TEMP_ALBUM / mp3_file, SONGS)
-        shutil.rmtree(TEMP_ALBUM)
 
 
 class Song:
@@ -343,26 +344,26 @@ class Song:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
-    )
-    parser.add_argument("--artist", type=str, help="Artist name")
-    parser.add_argument("--album", type=str, help="Album name")
-    parser.add_argument("--mbid", type=str, help="MusicBrainz release ID or release page URL")
-    args = parser.parse_args()
-    if args.mbid:
-        if args.artist or args.album:
-            parser.error("💀 Cannot use --mbid with --artist or --album")
-    elif args.artist and args.album:
-        pass
-    else:
-        parser.error("💀 You must provide either --mbid OR both --artist and --album")
-
-    ARTIST = args.artist
-    ALBUM_TITLE = args.album
-    RELEASE_ID = ut.validate_release_id(parser, args.mbid)
-
     try:
+        parser = argparse.ArgumentParser(
+            description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
+        )
+        parser.add_argument("--artist", type=str, help="Artist name")
+        parser.add_argument("--album", type=str, help="Album name")
+        parser.add_argument("--mbid", type=str, help="MusicBrainz release ID or release page URL")
+        args = parser.parse_args()
+        if args.mbid:
+            if args.artist or args.album:
+                parser.error("💀 Cannot use --mbid with --artist or --album")
+        elif args.artist and args.album:
+            pass
+        else:
+            parser.error("💀 You must provide either --mbid OR both --artist and --album")
+
+        ARTIST = args.artist
+        ALBUM_TITLE = args.album
+        RELEASE_ID = ut.validate_release_id(parser, args.mbid)
+
         album = Album(
             artist=ARTIST,
             album_title=ALBUM_TITLE,
@@ -376,10 +377,7 @@ if __name__ == "__main__":
         print(f"🎸 Artist:\t{album.artist}")
         print(f"💿 Album:\t{album.album_title}")
         ut.print_release_id(album.release_id)
-        if album.has_album_art():
-            album.get_album_art()
-        else:
-            print("❌ Album art not available")
+        album.get_album_art()
         album.get_track_list()
 
         while True:
@@ -395,6 +393,8 @@ if __name__ == "__main__":
                 user_input_release_id = input("Enter new Musicbrainz release ID or URL: ")
                 album.release_id = ut.validate_release_id(parser, user_input_release_id)
                 ut.print_release_id(album.release_id)
+                album.get_album_art()
+                album.get_track_list()
             else:
                 continue
 
