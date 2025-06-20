@@ -398,10 +398,6 @@ if __name__ == "__main__":
             else:
                 continue
 
-        if input("🔗 Get Youtube URLs? ([Y]/n): ").lower() != "n":
-            album.get_youtube_urls()
-        else:
-            exit()
         if input("🎶 Download songs? ([Y]/n): ").lower() != "n":
             album.download_mp3s()
         else:
