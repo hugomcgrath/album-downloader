@@ -203,7 +203,7 @@ class Song:
     def _get_youtube_url(self):
         ut.print_song_title(self.title, self.track_number, self.duration)
 
-        search_query = f"{self.artist} Topic {self.title}"
+        search_query = f"{self.artist} - {self.title}"
         search_items = youtube.search().list(
             q=search_query,
             part="id",
