@@ -194,13 +194,13 @@ class Song:
     def _get_youtube_url(self):
         ut.print_song_title(self.title, self.track_number, self.duration)
 
-        search_query = f"{self.artist} {self.title} Topic"
+        search_query = f"{self.artist} Topic {self.title}"
         search_items = youtube.search().list(
             q=search_query,
             part="id",
             type="video",
             videoCategoryId="10",
-            maxResults=10,
+            maxResults=5,
             fields="items(id(videoId))"
         ).execute()["items"]
         video_ids = [item["id"]["videoId"] for item in search_items]
