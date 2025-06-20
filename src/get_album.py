@@ -219,7 +219,7 @@ class Song:
             pacific = ZoneInfo("America/Los_Angeles")
             midnight_pacific = datetime.combine(datetime.now(), time(0, 0)).replace(tzinfo=pacific)
             local_time = midnight_pacific.astimezone()
-            print(f"💀 Quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
+            print(f"💀 YouTube API daily quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
             raise
         video_ids = [item["id"]["videoId"] for item in search_items]
 
