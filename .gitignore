@@ -4,3 +4,4 @@ __pycache__/
 songs/
 album_art/
 todo.txt
+*.ipynb
