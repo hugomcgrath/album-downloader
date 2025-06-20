@@ -31,6 +31,8 @@ from rapidfuzz.fuzz import partial_ratio
 import tempfile
 import argparse
 import uuid
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 
 load_dotenv()
@@ -204,14 +206,21 @@ class Song:
         ut.print_song_title(self.title, self.track_number, self.duration)
 
         search_query = f"{self.artist} - {self.title}"
-        search_items = youtube.search().list(
-            q=search_query,
-            part="id",
-            type="video",
-            videoCategoryId="10",
-            maxResults=5,
-            fields="items(id(videoId))"
-        ).execute()["items"]
+        try:
+            search_items = youtube.search().list(
+                q=search_query,
+                part="id",
+                type="video",
+                videoCategoryId="10",
+                maxResults=5,
+                fields="items(id(videoId))"
+            ).execute()["items"]
+        except:
+            pacific = ZoneInfo("America/Los_Angeles")
+            midnight_pacific = datetime.combine(datetime.now(), time(0, 0)).replace(tzinfo=pacific)
+            local_time = midnight_pacific.astimezone()
+            print(f"💀 Quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
+            raise
         video_ids = [item["id"]["videoId"] for item in search_items]
 
         videos_items = youtube.videos().list(
@@ -390,7 +399,6 @@ if __name__ == "__main__":
         else:
             exit()
     except:
-        print("💀 Something went wrong")
         raise
     finally:
         print("🧹 Cleaning up")
