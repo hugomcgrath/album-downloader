@@ -22,13 +22,15 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
     in your desired directory, otherwise click on the green <> Code button and click Download ZIP. Then unzip the file in your desired directory.
 
+    The ```git clone``` method is preferable, as it simplifies downloading the updates, you can just run ```git pull``` to get the latest version.
+
+    Otherwise you'll have to redownload the ZIP.
+
 2.  **Get the YouTube API key**
 
     This project uses the YouTube Data API and this means you, the user, need to supply your own API key. Follow the instructions [here](https://developers.google.com/youtube/v3/getting-started). Once you get your API key, copy it into the ```.env.example``` file provided in the project directory and follow the instructions in the file.
 
-3.  **Install the latest version of Google Chrome**
-
-    The project requires google chrome to function, I am using version 137.0.7151.55, but hopefully the latest version should work (let me know if it doesn't).
+3.  **Install Google Chrome**
 
 4.  **Install Miniconda**
 
@@ -38,11 +40,11 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
 5.  **Install the ```conda``` environment**
 
-    Run ```conda env create -f environment.yaml``` to create a conda environment and install all the required python packages into it. It's possible this may take a while.
+    Run ```conda env create -f environment.yaml``` to create a conda environment and install all the required python packages into it.
 
 6.  **Activate the ```conda``` environment**
 
-    Run ```conda activate album-downloader-env```.
+    Run ```conda activate album-downloader-env``` to activate the conda environment. You need to do this again any time you open the terminal and want to run the album downloader.
 
 7.  **Navigate to src/ in the project directory**
 
@@ -54,15 +56,13 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
         ```python get_album.py --artist "Michael Gira" --album "Drainland"```
 
-    2.  Supply the Musicbrainz release ID or the release page URL (example):
-
-        ```python get_album.py --mbid 649b5e91-07f9-40d0-a209-9bb860f19b81```
-
-        or alternatively:
+    2.  Supply the Musicbrainz release page URL:
 
         ```python get_album.py --mbid https://musicbrainz.org/release/649b5e91-07f9-40d0-a209-9bb860f19b81```
 
-        The Musicbrainz release ID is just the last part of the release page URL.
+        or the release ID (the last part of the release page URL):
+
+        ```python get_album.py --mbid 649b5e91-07f9-40d0-a209-9bb860f19b81```
 
 
 ## Limitations
