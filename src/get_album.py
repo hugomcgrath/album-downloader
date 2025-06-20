@@ -133,26 +133,28 @@ class Album:
             shutil.rmtree(TEMP_ART)
 
     def get_track_list(self):
-        track_list = mbz.get_release_by_id(
+        discs = mbz.get_release_by_id(
             self.release_id,
             includes=["recordings"]
-        )["release"]["medium-list"][0]["track-list"]
+        )["release"]["medium-list"]
         print("📝 Tracklist:")
-        for track in track_list:
-            title = track["recording"]["title"]
-            track_number = track["position"]
-            duration = int(track["recording"]["length"]) / 1000 # ms -> s
-            self.track_list.append(
-                Song(
-                    title,
-                    track_number,
-                    duration,
-                    self.artist,
-                    self.album_title,
-                    self.album_art_path,
+        track_number = 0
+        for disc in discs:
+            for track in disc["track-list"]:
+                title = track["recording"]["title"]
+                track_number += 1
+                duration = int(track["recording"]["length"]) / 1000 # ms -> s
+                self.track_list.append(
+                    Song(
+                        title,
+                        track_number,
+                        duration,
+                        self.artist,
+                        self.album_title,
+                        self.album_art_path,
+                    )
                 )
-            )
-            ut.print_song_title(title, track_number, duration)
+                ut.print_song_title(title, track_number, duration)
 
     def get_youtube_urls(self):
         for song in self.track_list:
