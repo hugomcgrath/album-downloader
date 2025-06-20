@@ -147,7 +147,10 @@ class Album:
             for track in disc["track-list"]:
                 title = track["recording"]["title"]
                 track_number += 1
-                duration = int(track["recording"]["length"]) / 1000 # ms -> s
+                try:
+                    duration = int(track["recording"]["length"]) / 1000 # ms -> s
+                except:
+                    duration = 0
                 self.track_list.append(
                     Song(
                         title,

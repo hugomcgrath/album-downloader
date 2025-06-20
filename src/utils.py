@@ -30,6 +30,8 @@ def duration_s_to_min_s(duration_s):
 
 def print_song_title(title, track_number, duration):
     duration = duration_s_to_min_s(duration)
+    if duration == "00:00":
+        duration = "??:??"
     string_without_duration = f"{str(track_number).zfill(2)}) {title}"
     n_spaces = 70 - len(string_without_duration)
     spaces = " " * n_spaces
