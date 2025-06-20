@@ -1,5 +1,4 @@
-import time
-import functools
+import uuid
 
 
 def sanitize(filename):
@@ -40,3 +39,14 @@ def print_song_title(title, track_number, duration):
         print(f"    \033[4m{string_without_duration}{spaces}{duration}\033[0m")
     except:
         print(f"{string_without_duration}{underscores}{duration}")
+
+def validate_release_id(parser, release_id_input):
+    if release_id_input is not None:
+        try:
+            release_id = release_id_input.split("/")[-1]
+            uuid.UUID(release_id)
+            return release_id
+        except:
+            parser.error("💀 Invalid Musicbrains release ID")
+    else:
+        return release_id_input

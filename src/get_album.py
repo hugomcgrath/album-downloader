@@ -30,7 +30,6 @@ from dotenv import load_dotenv
 from rapidfuzz.fuzz import partial_ratio
 import tempfile
 import argparse
-import uuid
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
@@ -361,14 +360,7 @@ if __name__ == "__main__":
 
     ARTIST = args.artist
     ALBUM_TITLE = args.album
-    if args.mbid is not None:
-        try:
-            RELEASE_ID = args.mbid.split("/")[-1]
-            uuid.UUID(RELEASE_ID)
-        except:
-            parser.error("💀 Invalid Musicbrains release ID")
-    else:
-        RELEASE_ID = args.mbid
+    RELEASE_ID = ut.validate_release_id(parser, args.mbid)
 
     try:
         album = Album(
@@ -390,6 +382,22 @@ if __name__ == "__main__":
         else:
             print("❌ Album art not available")
         album.get_track_list()
+
+        while True:
+            user_input_urls = input(
+                "🔗 Get Youtube URLs? [y]es/(n)o/(m)odify release ID: "
+            ).lower()
+            if user_input_urls == "y":
+                album.get_youtube_urls()
+                break
+            elif user_input_urls == "n":
+                exit()
+            elif user_input_urls == "m":
+                user_input_release_id = input("Enter new Musicbrainz release ID or URL: ")
+                album.release_id = ut.validate_release_id(parser, user_input_release_id)
+            else:
+                continue
+
         if input("🔗 Get Youtube URLs? ([Y]/n): ").lower() != "n":
             album.get_youtube_urls()
         else:
