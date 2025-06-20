@@ -40,6 +40,10 @@ def print_song_title(title, track_number, duration):
     except:
         print(f"{string_without_duration}{underscores}{duration}")
 
+def print_release_id(release_id):
+    print("🌐 Musicbrainz release page:")
+    print(f"    🔗 https://www.musicbrainz.org/release/{release_id}")
+
 def validate_release_id(parser, release_id_input):
     if release_id_input is not None:
         try:

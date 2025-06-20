@@ -375,8 +375,7 @@ if __name__ == "__main__":
             album.get_artist_and_album_title()
         print(f"🎸 Artist:\t{album.artist}")
         print(f"💿 Album:\t{album.album_title}")
-        print("🌐 Musicbrainz release page:")
-        print(f"    🔗 https://www.musicbrainz.org/release/{album.release_id}")
+        ut.print_release_id(album.release_id)
         if album.has_album_art():
             album.get_album_art()
         else:
@@ -395,6 +394,7 @@ if __name__ == "__main__":
             elif user_input_urls == "m":
                 user_input_release_id = input("Enter new Musicbrainz release ID or URL: ")
                 album.release_id = ut.validate_release_id(parser, user_input_release_id)
+                ut.print_release_id(album.release_id)
             else:
                 continue
 
