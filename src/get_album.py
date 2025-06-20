@@ -308,13 +308,20 @@ class Song:
         )
         urls_before_click = [i.url for i in driver.requests]
         download_button.click()
-        time.sleep(0.5)
-        urls_after_click = [i.url for i in driver.requests]
-        new_urls = [i for i in urls_after_click if i not in urls_before_click]
-        for url in new_urls:
-            if ("mp3" in url) and ("download" in url) and ("google" not in url):
-                download_url = url
-                break
+        start_time = time.time()
+        while time.time() - start_time < TIMEOUT:
+            urls_after_click = [i.url for i in driver.requests]
+            new_urls = [i for i in urls_after_click if i not in urls_before_click]
+            for url in new_urls:
+                if ("mp3" in url) and ("download" in url) and ("google" not in url):
+                    download_url = url
+                    break
+            else:
+                continue
+            break
+        else:
+            print("💀 Download timed out")
+            exit()
         response = requests.get(download_url)
         response.raise_for_status()
         with open(TEMP_ALBUM / self.mp3_file_name, "wb") as file:
