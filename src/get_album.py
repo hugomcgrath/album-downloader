@@ -382,7 +382,7 @@ if __name__ == "__main__":
 
         while True:
             user_input_urls = input(
-                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify release ID: "
+                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify Musicbrainz release ID: "
             ).lower()
             if user_input_urls == "y" or user_input_urls == "":
                 album.get_youtube_urls()
@@ -398,10 +398,40 @@ if __name__ == "__main__":
             else:
                 continue
 
-        if input("🎶 Download songs? ([Y]/n): ").lower() != "n":
-            album.download_mp3s()
-        else:
-            exit()
+        while True:
+            user_input_download = input(
+                "🎶 Download songs? [y]es/(n)o/(m)odify YouTube URLs: "
+            ).lower()
+            if user_input_download == "y" or user_input_download == "":
+                album.download_mp3s()
+                break
+            elif user_input_download == "n":
+                exit()
+            elif user_input_download == "m":
+                while True:
+                    user_input_track_number = input(
+                        "Enter track number of song with URL you want to modify/(c)ancel: "
+                    ).lower()
+                    if user_input_track_number == "c":
+                        break
+                    try:
+                        track_index = int(user_input_track_number) - 1
+                        song = album.track_list[track_index]
+                        ut.print_song_title(song.title, song.track_number, song.duration)
+                        print(f"\t❓ {song.youtube_url} (Old URL)")
+                    except:
+                        print("Invalid track number, try again")
+                        continue
+                    user_input_url = input("Enter new YouTube URL/(c)ancel: ")
+                    if user_input_url == "c":
+                        break
+                    song.youtube_url = user_input_url
+                    ut.print_song_title(song.title, song.track_number, song.duration)
+                    print(f"\t✅ {song.youtube_url} (New URL)")
+                    break
+            else:
+                continue
+
     except:
         raise
     finally:
