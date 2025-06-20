@@ -30,7 +30,8 @@ from dotenv import load_dotenv
 from rapidfuzz.fuzz import partial_ratio
 import tempfile
 import argparse
-import uuid
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 
 load_dotenv()
@@ -82,7 +83,7 @@ class Album:
         self.artist = release_data["release"]["artist-credit"][0]["artist"]["name"]
         self.album_title = release_data["release"]["title"]
 
-    def has_album_art(self):
+    def _has_album_art(self):
         try:
             images = mbz.get_image_list(self.release_id)
             return len(images.get("images", [])) > 0
@@ -111,7 +112,7 @@ class Album:
         )["release-group"]["release-list"]
         for release in releases:
             self.release_id = release["id"]
-            if self.has_album_art():
+            if self._has_album_art():
                 return
             else:
                 continue
@@ -119,22 +120,25 @@ class Album:
         self.release_id = releases[0]["id"]
 
     def get_album_art(self):
-        url = f"https://coverartarchive.org/release/{self.release_id}/front"
-        response = requests.get(url)
-        if response.status_code == 200:
-            image = Image.open(BytesIO(response.content))
-            image = image.convert("RGB")
-            image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
-            self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
-            image.save(self.album_art_path, format="JPEG", quality=85)
-            print("✅ Downloaded album art")
-            try:
-                subprocess.run(["kitten", "icat", self.album_art_path])
-            except:
-                pass
+        if self._has_album_art():
+            url = f"https://coverartarchive.org/release/{self.release_id}/front"
+            response = requests.get(url)
+            if response.status_code == 200:
+                image = Image.open(BytesIO(response.content))
+                image = image.convert("RGB")
+                image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
+                self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
+                image.save(self.album_art_path, format="JPEG", quality=85)
+                print("✅ Downloaded album art")
+                try:
+                    subprocess.run(["kitten", "icat", self.album_art_path])
+                except:
+                    pass
+            else:
+                print("❌ Album art not available")
+
         else:
             print("❌ Album art not available")
-            shutil.rmtree(TEMP_ART)
 
     def get_track_list(self):
         discs = mbz.get_release_by_id(
@@ -173,12 +177,10 @@ class Album:
             song._set_metadata()
         try:
             shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
-            shutil.rmtree(TEMP_ART)
         except:
             pass
         for mp3_file in os.listdir(TEMP_ALBUM):
             shutil.move(TEMP_ALBUM / mp3_file, SONGS)
-        shutil.rmtree(TEMP_ALBUM)
 
 
 class Song:
@@ -204,14 +206,21 @@ class Song:
         ut.print_song_title(self.title, self.track_number, self.duration)
 
         search_query = f"{self.artist} - {self.title}"
-        search_items = youtube.search().list(
-            q=search_query,
-            part="id",
-            type="video",
-            videoCategoryId="10",
-            maxResults=5,
-            fields="items(id(videoId))"
-        ).execute()["items"]
+        try:
+            search_items = youtube.search().list(
+                q=search_query,
+                part="id",
+                type="video",
+                videoCategoryId="10",
+                maxResults=5,
+                fields="items(id(videoId))"
+            ).execute()["items"]
+        except:
+            pacific = ZoneInfo("America/Los_Angeles")
+            midnight_pacific = datetime.combine(datetime.now(), time(0, 0)).replace(tzinfo=pacific)
+            local_time = midnight_pacific.astimezone()
+            print(f"💀 YouTube API daily quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
+            raise
         video_ids = [item["id"]["videoId"] for item in search_items]
 
         videos_items = youtube.videos().list(
@@ -342,33 +351,26 @@ class Song:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
-    )
-    parser.add_argument("--artist", type=str, help="Artist name")
-    parser.add_argument("--album", type=str, help="Album name")
-    parser.add_argument("--mbid", type=str, help="MusicBrainz release ID or release page URL")
-    args = parser.parse_args()
-    if args.mbid:
-        if args.artist or args.album:
-            parser.error("💀 Cannot use --mbid with --artist or --album")
-    elif args.artist and args.album:
-        pass
-    else:
-        parser.error("💀 You must provide either --mbid OR both --artist and --album")
-
-    ARTIST = args.artist
-    ALBUM_TITLE = args.album
-    if args.mbid is not None:
-        try:
-            RELEASE_ID = args.mbid.split("/")[-1]
-            uuid.UUID(RELEASE_ID)
-        except:
-            parser.error("💀 Invalid Musicbrains release ID")
-    else:
-        RELEASE_ID = args.mbid
-
     try:
+        parser = argparse.ArgumentParser(
+            description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
+        )
+        parser.add_argument("--artist", type=str, help="Artist name")
+        parser.add_argument("--album", type=str, help="Album name")
+        parser.add_argument("--mbid", type=str, help="MusicBrainz release ID or release page URL")
+        args = parser.parse_args()
+        if args.mbid:
+            if args.artist or args.album:
+                parser.error("💀 Cannot use --mbid with --artist or --album")
+        elif args.artist and args.album:
+            pass
+        else:
+            parser.error("💀 You must provide either --mbid OR both --artist and --album")
+
+        ARTIST = args.artist
+        ALBUM_TITLE = args.album
+        RELEASE_ID = ut.validate_release_id(parser, args.mbid)
+
         album = Album(
             artist=ARTIST,
             album_title=ALBUM_TITLE,
@@ -381,23 +383,63 @@ if __name__ == "__main__":
             album.get_artist_and_album_title()
         print(f"🎸 Artist:\t{album.artist}")
         print(f"💿 Album:\t{album.album_title}")
-        print("🌐 Musicbrainz release page:")
-        print(f"    🔗 https://www.musicbrainz.org/release/{album.release_id}")
-        if album.has_album_art():
-            album.get_album_art()
-        else:
-            print("❌ Album art not available")
+        ut.print_release_id(album.release_id)
+        album.get_album_art()
         album.get_track_list()
-        if input("🔗 Get Youtube URLs? ([Y]/n): ").lower() != "n":
-            album.get_youtube_urls()
-        else:
-            exit()
-        if input("🎶 Download songs? ([Y]/n): ").lower() != "n":
-            album.download_mp3s()
-        else:
-            exit()
+
+        while True:
+            user_input_urls = input(
+                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify Musicbrainz release ID: "
+            ).lower()
+            if user_input_urls == "y" or user_input_urls == "":
+                album.get_youtube_urls()
+                break
+            elif user_input_urls == "n":
+                exit()
+            elif user_input_urls == "m":
+                user_input_release_id = input("Enter new Musicbrainz release ID or URL: ")
+                album.release_id = ut.validate_release_id(parser, user_input_release_id)
+                ut.print_release_id(album.release_id)
+                album.get_album_art()
+                album.get_track_list()
+            else:
+                continue
+
+        while True:
+            user_input_download = input(
+                "🎶 Download songs? [y]es/(n)o/(m)odify YouTube URLs: "
+            ).lower()
+            if user_input_download == "y" or user_input_download == "":
+                album.download_mp3s()
+                break
+            elif user_input_download == "n":
+                exit()
+            elif user_input_download == "m":
+                while True:
+                    user_input_track_number = input(
+                        "Enter track number of song with URL you want to modify/(c)ancel: "
+                    ).lower()
+                    if user_input_track_number == "c":
+                        break
+                    try:
+                        track_index = int(user_input_track_number) - 1
+                        song = album.track_list[track_index]
+                        ut.print_song_title(song.title, song.track_number, song.duration)
+                        print(f"\t❓ {song.youtube_url} (Old URL)")
+                    except:
+                        print("Invalid track number, try again")
+                        continue
+                    user_input_url = input("Enter new YouTube URL/(c)ancel: ")
+                    if user_input_url == "c":
+                        break
+                    song.youtube_url = user_input_url
+                    ut.print_song_title(song.title, song.track_number, song.duration)
+                    print(f"\t✅ {song.youtube_url} (New URL)")
+                    break
+            else:
+                continue
+
     except:
-        print("💀 Something went wrong")
         raise
     finally:
         print("🧹 Cleaning up")
