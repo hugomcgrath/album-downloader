@@ -382,9 +382,9 @@ if __name__ == "__main__":
 
         while True:
             user_input_urls = input(
-                "🔗 Get Youtube URLs? [y]es/(n)o/(m)odify release ID: "
+                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify release ID: "
             ).lower()
-            if user_input_urls == "y":
+            if user_input_urls == "y" or user_input_urls == "":
                 album.get_youtube_urls()
                 break
             elif user_input_urls == "n":
