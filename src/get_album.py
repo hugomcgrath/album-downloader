@@ -1,6 +1,10 @@
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="seleniumwire")
-warnings.filterwarnings("ignore", category=RuntimeWarning, message="coroutine '.*'' was never awaited")
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message="coroutine 'AddonManager.handle_lifecycle' was never awaited"
+)
 
 import musicbrainzngs as mbz
 import requests
