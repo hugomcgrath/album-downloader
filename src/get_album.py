@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 from rapidfuzz.fuzz import partial_ratio
 import tempfile
 import argparse
-from datetime import datetime, time
+import datetime
 from zoneinfo import ZoneInfo
 
 
@@ -217,7 +217,7 @@ class Song:
             ).execute()["items"]
         except:
             pacific = ZoneInfo("America/Los_Angeles")
-            midnight_pacific = datetime.combine(datetime.now(), time(0, 0)).replace(tzinfo=pacific)
+            midnight_pacific = datetime.datetime.combine(datetime.datetime.now(), datetime.time(0, 0)).replace(tzinfo=pacific)
             local_time = midnight_pacific.astimezone()
             print(f"💀 YouTube API daily quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
             raise
