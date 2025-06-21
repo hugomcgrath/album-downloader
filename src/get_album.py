@@ -222,7 +222,7 @@ class Song:
             print(f"💀 YouTube API daily quota exceeded, try again tomorrow at {local_time.strftime('%H:%M %Z')}")
             raise
         video_ids = [item["id"]["videoId"] for item in search_items]
-        channels = [item["snipped"]["channelTitle"] for item in search_items]
+        channels = [item["snippet"]["channelTitle"] for item in search_items]
 
         videos_items = youtube.videos().list(
             part="contentDetails,snippet",
