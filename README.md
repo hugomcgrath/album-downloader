@@ -8,7 +8,7 @@ First of all, modify your ```.env``` file according to the new ```.env.example``
 
 If you've used ```src/get_album.py``` to download albums before, you can migrate to the new directory structure by running ```src/migrate.py``` (as long as you didn't rename the .mp3 files).
 
-# Album downloader (Looking for a good name!)
+# 💿 Album downloader (Looking for a good name!)
 
 This tool was born of my stubborn refusal to use music streaming services like a normal person. I don't like that more and more services use the subscription model and I don't want to support it. The alternatives often aren't great. The way I did things before, I would use an online [YouTube to .mp3 convertor](https://ytmp3.as/) and paste in YouTube links to download the .mp3 files one by one. I would then usually have to rename the file and manually set the metadata. As you can imagine, this was very frustrating and often I didn't bother. But every incorrectly set metadata tag, every wrong album art image slowly nibbled away at my sanity until one day I had to do something about it. Since I enjoy slapping together mediocre python code, I slapped together (with only moderate use of ChatGPT) a solution to all my music related problems - an album downloader!
 
