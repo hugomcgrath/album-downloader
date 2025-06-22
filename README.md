@@ -77,7 +77,7 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
 ## Limitations
 
-Of course nothing is ever perfect in this vale of tears, the album downloader included. The biggest limitation is the fact that the YouTube API has a daily quota which means you will only be able to download approx. 90 songs a day, that works out to roughly 7-8 album a day. The quota resets at 09:00 CEST.
+Of course nothing is ever perfect in this vale of tears, the album downloader included. The biggest limitation is the fact that the YouTube API has a daily quota which means you will only be able to download approx. 90 songs a day, that works out to roughly 7-8 albums a day. The quota resets at 09:00 CEST.
 
 If you search for the album by ```--artist``` and ```--album```, there is a small chance the release (version of the album) may not be the one you want (sometimes different releases have songs added or removed, album art may be different). You can correct this, when asked ```🔗 Get YouTube URLs? [y]es/(n)o/(m)odify Musicbrainz release ID:```, input ```m``` and then paste in the correct Musicbrainz release ID or URL.
 
