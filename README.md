@@ -1,3 +1,13 @@
+## ⚠️ Possibly breaking change ⚠️
+
+I have changed the way songs are saved to the ```SONGS_DIRECTORY```, now instead of downloading everything into one flat directory, it is structured the following way: ```SONGS_DIRECTORY/artist/album_title/songs/track_number.song_title.mp3``` and the ```ALBUM_ART_DIRECTORY``` is moved to ```SONGS_DIRECTORY/artist/album_title/album_art/album_title.jpg```.
+
+### What do I have to do?
+
+First of all, modify your ```.env``` file according to the new ```.env.example``` template. If you want to use the new directory organization structure, it is important you set the ```ORGANIZE_SONGS``` flag to ```true```.
+
+If you've used ```src/get_album.py``` to download albums before, you can migrate to the new directory structure by running ```src/migrate.py``` (as long as you didn't rename the .mp3 files).
+
 # Album downloader (Looking for a good name!)
 
 This tool was born of my stubborn refusal to use music streaming services like a normal person. I don't like that more and more services use the subscription model and I don't want to support it. The alternatives often aren't great. The way I did things before, I would use an online [YouTube to .mp3 convertor](https://ytmp3.as/) and paste in YouTube links to download the .mp3 files one by one. I would then usually have to rename the file and manually set the metadata. As you can imagine, this was very frustrating and often I didn't bother. But every incorrectly set metadata tag, every wrong album art image slowly nibbled away at my sanity until one day I had to do something about it. Since I enjoy slapping together mediocre python code, I slapped together (with only moderate use of ChatGPT) a solution to all my music related problems - an album downloader!
@@ -67,7 +77,7 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
 ## Limitations
 
-Of course nothing is ever perfect in this vale of tears, the album downloader included. The biggest limitation is the fact that the YouTube API has a daily quota which means you will only be able to download approx. 90 songs a day. The quota resets at 09:00 CEST.
+Of course nothing is ever perfect in this vale of tears, the album downloader included. The biggest limitation is the fact that the YouTube API has a daily quota which means you will only be able to download approx. 90 songs a day, that works out to roughly 7-8 album a day. The quota resets at 09:00 CEST.
 
 If you search for the album by ```--artist``` and ```--album```, there is a small chance the release (version of the album) may not be the one you want (sometimes different releases have songs added or removed, album art may be different). You can correct this, when asked ```🔗 Get YouTube URLs? [y]es/(n)o/(m)odify Musicbrainz release ID:```, input ```m``` and then paste in the correct Musicbrainz release ID or URL.
 
