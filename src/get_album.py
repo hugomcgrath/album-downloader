@@ -35,16 +35,22 @@ from zoneinfo import ZoneInfo
 
 
 load_dotenv()
-BD = Path(os.getenv("BASE_DIRECTORY"))
-BD.mkdir(parents=True, exist_ok=True)
 SONGS = Path(os.getenv("SONGS_DIRECTORY"))
 SONGS.mkdir(parents=True, exist_ok=True)
-ALBUM_ART = Path(os.getenv("ALBUM_ART_DIRECTORY"))
-ALBUM_ART.mkdir(parents=True, exist_ok=True)
+
+ORGANIZE_SONGS = ut.load_organize_songs()
+
+if not ORGANIZE_SONGS:
+    ALBUM_ART = Path(os.getenv("ALBUM_ART_DIRECTORY"))
+    ALBUM_ART.mkdir(parents=True, exist_ok=True)
+
 TEMP_ALBUM = Path(tempfile.mkdtemp())
 TEMP_ART = Path(tempfile.mkdtemp())
 
 YT_API_KEY = os.getenv("YT_API_KEY")
+if  (YT_API_KEY == "your-yt-api-key-goes-here") or (YT_API_KEY is None):
+    print("💀 Set YT_API_KEY variable in .env file to your YouTube Data API key (see README.md)")
+    exit()
 
 TIMEOUT = 60 # s
 THUMBNAIL_SIZE = (500, 500)
@@ -127,7 +133,10 @@ class Album:
                 image = Image.open(BytesIO(response.content))
                 image = image.convert("RGB")
                 image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
-                self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
+                if ORGANIZE_SONGS:
+                    self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.jpg"
+                else:
+                    self.album_art_path = TEMP_ART / f"{ut.sanitize(self.album_title)}.1.jpg"
                 image.save(self.album_art_path, format="JPEG", quality=85)
                 print("✅ Downloaded album art")
                 try:
@@ -174,13 +183,31 @@ class Album:
     def download_mp3s(self):
         for song in self.track_list:
             song._download_mp3()
+            time.sleep(0.5)
             song._set_metadata()
-        try:
-            shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
-        except:
-            pass
-        for mp3_file in os.listdir(TEMP_ALBUM):
-            shutil.move(TEMP_ALBUM / mp3_file, SONGS)
+
+        if ORGANIZE_SONGS:
+            ALBUM_DIR = SONGS / ut.sanitize(self.artist) / ut.sanitize(self.album_title)
+            SONGS_NEW = ALBUM_DIR / "songs"
+            SONGS_NEW.mkdir(parents=True, exist_ok=True)
+            ALBUM_ART_NEW = ALBUM_DIR / "album_art"
+            ALBUM_ART_NEW.mkdir(parents=True, exist_ok=True)
+
+            try:
+                shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART_NEW)
+            except:
+                pass
+
+            for mp3_file in os.listdir(TEMP_ALBUM):
+                shutil.move(TEMP_ALBUM / mp3_file, SONGS_NEW)
+        else:
+            try:
+                shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
+            except:
+                pass
+
+            for mp3_file in os.listdir(TEMP_ALBUM):
+                shutil.move(TEMP_ALBUM / mp3_file, SONGS)
 
 
 class Song:
@@ -194,13 +221,16 @@ class Song:
         album_art
     ):
         self.title = title
-        self.mp3_file_name = f"{ut.sanitize(self.title)}.1.mp3"
         self.track_number = track_number
         self.duration = duration
         self.artist = artist
         self.album_title = album_title
         self.album_art_path = album_art
         self.youtube_url = None
+        if ORGANIZE_SONGS:
+            self.mp3_file_name = str(self.track_number).zfill(2) + "." + ut.sanitize(self.title) + ".mp3"
+        else:
+            self.mp3_file_name = ut.sanitize(self.title) + ".1.mp3"
 
     def _get_youtube_url(self):
         ut.print_song_title(self.title, self.track_number, self.duration)
@@ -305,6 +335,11 @@ class Song:
         ut.print_song_title(self.title, self.track_number, self.duration)
         driver = webdriver.Chrome(service=SERVICE, options=options)
         driver.get("https://ytmp3.la")
+        WebDriverWait(driver, TIMEOUT).until(
+            EC.presence_of_element_located(
+                (By.ID, "v")
+            )
+        )
         input_field = driver.find_element(By.ID, "v")
         input_field.send_keys(self.youtube_url)
         convert_button = driver.find_element(
@@ -332,26 +367,28 @@ class Song:
                     download_url = url
                     break
             else:
+                time.sleep(0.5)
                 continue
             break
         else:
-            print("💀 Download timed out")
+            print(f"💀 Download exceeded {TIMEOUT} s and timed out")
             exit()
         response = requests.get(download_url)
         response.raise_for_status()
         with open(TEMP_ALBUM / self.mp3_file_name, "wb") as file:
             file.write(response.content)
-        mp3_file_name_old = self.mp3_file_name
-        # increment number in filename if a song of the same name already
-        # exists in the SONGS directory
-        while self.mp3_file_name in os.listdir(SONGS):
-            split_filename = self.mp3_file_name.split(".")
-            split_filename[-2] = str(int(split_filename[-2]) + 1)
-            self.mp3_file_name = ".".join(split_filename)
-        shutil.move(
-            TEMP_ALBUM / mp3_file_name_old,
-            TEMP_ALBUM / self.mp3_file_name
-        )
+        if not ORGANIZE_SONGS:
+            mp3_file_name_old = self.mp3_file_name
+            # increment number in filename if a song of the same name already
+            # exists in the SONGS directory (only if ORGANIZE_SONGS=false)
+            while self.mp3_file_name in os.listdir(SONGS):
+                split_filename = self.mp3_file_name.split(".")
+                split_filename[-2] = str(int(split_filename[-2]) + 1)
+                self.mp3_file_name = ".".join(split_filename)
+            shutil.move(
+                TEMP_ALBUM / mp3_file_name_old,
+                TEMP_ALBUM / self.mp3_file_name
+            )
         driver.quit()
         print("\t✅ Downloaded mp3")
 

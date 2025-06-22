@@ -1,4 +1,6 @@
 import uuid
+import os
+from dotenv import load_dotenv
 
 
 def sanitize(filename):
@@ -17,6 +19,8 @@ def sanitize(filename):
             '"': "",
             "?": "",
             "&": "and",
+            "“": "",
+            "”": "",
         }
     )
     return f"{filename.translate(translation_table).lower()}"
@@ -54,3 +58,20 @@ def validate_release_id(parser, release_id_input):
             parser.error("💀 Invalid Musicbrains release ID")
     else:
         return release_id_input
+
+def is_flat_directory(path):
+    with os.scandir(path) as entries:
+        return all(not entry.is_dir() for entry in entries)
+
+def load_organize_songs():
+    load_dotenv()
+    if (
+        (os.getenv("ORGANIZE_SONGS") is None) or
+        (os.getenv("ORGANIZE_SONGS").lower() == "false")
+    ):
+        return False
+    elif os.getenv("ORGANIZE_SONGS").lower() == "true":
+        return True
+    else:
+        print("💀 Set ORGANIZE_SONGS variable in .env file to either true or false")
+        exit()
