@@ -5,3 +5,4 @@ songs/
 album_art/
 todo.txt
 *.ipynb
+*.sh
