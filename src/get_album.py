@@ -52,9 +52,9 @@ if  (YT_API_KEY == "your-yt-api-key-goes-here") or (YT_API_KEY is None):
     print("💀 Set YT_API_KEY variable in .env file to your YouTube Data API key (see README.md)")
     exit()
 
-TIMEOUT = 60 # s
+TIMEOUT = 90 # s
 THUMBNAIL_SIZE = (500, 500)
-DURATION_TOLERANCE = 5 # s
+DURATION_TOLERANCE = 10 # s
 MIN_FUZZY = 90
 
 SERVICE = Service(ChromeDriverManager().install())
