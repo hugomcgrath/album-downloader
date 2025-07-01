@@ -1,13 +1,3 @@
-## ⚠️ Possibly breaking change ⚠️
-
-I have changed the way songs are saved to the ```SONGS_DIRECTORY```, now instead of downloading everything into one flat directory, it is structured the following way: ```SONGS_DIRECTORY/artist/album_title/songs/track_number.song_title.mp3``` and the ```ALBUM_ART_DIRECTORY``` is moved to ```SONGS_DIRECTORY/artist/album_title/album_art/album_title.jpg```.
-
-### What do I have to do?
-
-First of all, modify your ```.env``` file according to the new ```.env.example``` template. If you want to use the new directory organization structure, it is important you set the ```ORGANIZE_SONGS``` flag to ```true```.
-
-If you've used ```src/get_album.py``` to download albums before, you can migrate to the new directory structure by running ```src/migrate.py``` (as long as you didn't rename the .mp3 files).
-
 # 💿 Album downloader (Looking for a good name!)
 
 This tool was born of my stubborn refusal to use music streaming services like a normal person. I don't like that more and more services use the subscription model and I don't want to support it. The alternatives often aren't great. The way I did things before, I would use an online [YouTube to .mp3 convertor](https://ytmp3.as/) and paste in YouTube links to download the .mp3 files one by one. I would then usually have to rename the file and manually set the metadata. As you can imagine, this was very frustrating and often I didn't bother. But every incorrectly set metadata tag, every wrong album art image slowly nibbled away at my sanity until one day I had to do something about it. Since I enjoy slapping together mediocre python code, I slapped together (with only moderate use of ChatGPT) a solution to all my music related problems - an album downloader!
@@ -18,7 +8,7 @@ As a final thought, I realize this is probably not very nice towards artists, so
 
 ## How it works
 
-The user inputs the artist name and album title OR the Musicbrainz release URL and the code does the rest. First it finds the album tracklist and album art from the [Musicbrains database](https://musicbrainz.org/), then it uses the [YouTube Data API](https://developers.google.com/youtube/v3) to search for the songs and tries to get the best match, then downloads the .mp3 files using the [YouTube to .mp3 convertor](https://ytmp3.as/) and finally sets the correct metadata including album art for each .mp3 file! The .mp3 files and album art are saved in the directories you specify in the ```.env``` file. You can then just copy the .mp3 files to your phone and any music player app should be able to recognise the metadata and sort everything correctly. I strongly recommend the [Oto Music Player](https://play.google.com/store/apps/details?id=com.piyush.music&hl=cs), it doesn't show adds!
+The user inputs the artist name and album title OR the Musicbrainz release URL and the code does the rest. First it finds the album tracklist and album art from the [Musicbrains database](https://musicbrainz.org/), then it uses the [YouTube Data API](https://developers.google.com/youtube/v3) to search for the songs and tries to get the best match, then downloads the .mp3 files using ~~the [YouTube to .mp3 convertor](https://ytmp3.as/)~~ [yt-dlp](https://github.com/yt-dlp/yt-dlp) (big improvement!) and finally sets the correct metadata including album art for each .mp3 file! The .mp3 files and album art are then saved in the location you specify in the ```.env``` file. You can then just copy the .mp3 files to your phone and any music player app should be able to recognise the metadata and sort everything correctly. I strongly recommend the [Oto Music Player](https://play.google.com/store/apps/details?id=com.piyush.music&hl=cs), it doesn't show adds!
 
 ## Installation
 
@@ -38,15 +28,13 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
     This project uses the YouTube Data API and this means you, the user, need to supply your own API key. Follow the instructions [here](https://developers.google.com/youtube/v3/getting-started). Once you get your API key, copy it into the ```.env.example``` file provided in the project directory and follow the instructions in the file.
 
-3.  **Install Google Chrome**
-
-4.  **Install Miniconda**
+3.  **Install Miniconda**
 
     To manage all the python packages this project uses I use the ```conda``` package manager. Miniconda is a light-weight distribution of this package manager. Follow the installation instructions [here](https://www.anaconda.com/docs/getting-started/miniconda/install). If you don't want the (base) environment to activate each time you open your command prompt, run this:
 
     ```conda config --set auto_activate_base false```
 
-5.  **Install the ```conda``` environment**
+4.  **Install the ```conda``` environment**
 
     Run ```conda env create -f environment.yaml``` to create a conda environment and install all the required python packages into it.
 
@@ -88,3 +76,15 @@ The program should hopefully work on all PC platforms, but I only tried it out o
 The Musicbrainz database may not have all Czech artists you may be interested in.
 
 Please let me know if you encounter any bugs and I'll be happy to hear any suggestions on how to improve the album downloader (and suggestions for a good name). Enjoy! 🎷🎷🎷
+
+## ⚠️ Possibly breaking change ⚠️
+
+I have changed the way songs are saved to the ```SONGS_DIRECTORY```, now instead of downloading everything into one flat directory, it is structured the following way: ```SONGS_DIRECTORY/artist/album_title/songs/track_number.song_title.mp3``` and the ```ALBUM_ART_DIRECTORY``` is moved to ```SONGS_DIRECTORY/artist/album_title/album_art/album_title.jpg```.
+
+### What do I have to do?
+
+First of all, modify your ```.env``` file according to the new ```.env.example``` template. If you want to use the new directory organization structure, it is important you set the ```ORGANIZE_SONGS``` flag to ```true```.
+
+If you've used ```src/get_album.py``` to download albums before, you can migrate to the new directory structure by running ```src/migrate.py``` (as long as you didn't rename the .mp3 files).
+
+
