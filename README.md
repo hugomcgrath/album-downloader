@@ -28,7 +28,9 @@ The project installation can seem a bit complicated but bear with me! In the fut
 
 2.  **Get the YouTube API key**
 
-    This project uses the YouTube Data API and this means you, the user, need to supply your own API key. Follow the instructions [here](https://developers.google.com/youtube/v3/getting-started). Once you get your API key, copy it into the ```.env.example``` file provided in the project directory and <span style="color:orange">**follow the instructions in the file!**</span>
+    This project uses the YouTube Data API and this means you, the user, need to supply your own API key. Follow the instructions [here](https://developers.google.com/youtube/v3/getting-started). Once you get your API key, copy it into the ```.env.example``` file provided in the project directory.
+
+3.  **Follow the instructions in ```.env.example```**
 
 3.  **Install Miniconda**
 
