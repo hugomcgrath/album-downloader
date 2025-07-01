@@ -1,21 +1,6 @@
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="seleniumwire")
-warnings.filterwarnings(
-    "ignore",
-    category=RuntimeWarning,
-    message="coroutine 'AddonManager.handle_lifecycle' was never awaited"
-)
-
 import musicbrainzngs as mbz
 import requests
 from googleapiclient.discovery import build
-from seleniumwire import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import os
 import eyed3
 from PIL import Image
@@ -24,7 +9,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import utils as ut
-import time
 from isodate import parse_duration
 from dotenv import load_dotenv
 from rapidfuzz.fuzz import partial_ratio
@@ -32,6 +16,7 @@ import tempfile
 import argparse
 import datetime
 from zoneinfo import ZoneInfo
+import yt_dlp
 
 
 load_dotenv()
@@ -52,23 +37,12 @@ if  (YT_API_KEY == "your-yt-api-key-goes-here") or (YT_API_KEY is None):
     print("💀 Set YT_API_KEY variable in .env file to your YouTube Data API key (see README.md)")
     exit()
 
-TIMEOUT = 90 # s
 THUMBNAIL_SIZE = (500, 500)
 DURATION_TOLERANCE = 10 # s
 MIN_FUZZY = 90
 
-SERVICE = Service(ChromeDriverManager().install())
-
 youtube = build("youtube", "v3", developerKey=YT_API_KEY)
 mbz.set_useragent("testing", "0.1")
-
-chrome_prefs = {
-    # stop automatic downloads, handle them manually using requests
-    "download_restrictions": 3
-}
-options = Options()
-options.add_experimental_option("prefs", chrome_prefs)
-options.add_argument("--headless")
 
 
 class Album:
@@ -183,23 +157,22 @@ class Album:
     def download_mp3s(self):
         for song in self.track_list:
             song._download_mp3()
-            time.sleep(0.5)
             song._set_metadata()
 
         if ORGANIZE_SONGS:
             ALBUM_DIR = SONGS / ut.sanitize(self.artist) / ut.sanitize(self.album_title)
-            SONGS_NEW = ALBUM_DIR / "songs"
-            SONGS_NEW.mkdir(parents=True, exist_ok=True)
-            ALBUM_ART_NEW = ALBUM_DIR / "album_art"
-            ALBUM_ART_NEW.mkdir(parents=True, exist_ok=True)
+            SONGS_ORGANIZED = ALBUM_DIR / "songs"
+            SONGS_ORGANIZED.mkdir(parents=True, exist_ok=True)
+            ALBUM_ART_ORGANIZED = ALBUM_DIR / "album_art"
+            ALBUM_ART_ORGANIZED.mkdir(parents=True, exist_ok=True)
 
             try:
-                shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART_NEW)
+                shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART_ORGANIZED)
             except:
                 pass
 
             for mp3_file in os.listdir(TEMP_ALBUM):
-                shutil.move(TEMP_ALBUM / mp3_file, SONGS_NEW)
+                shutil.move(TEMP_ALBUM / mp3_file, SONGS_ORGANIZED)
         else:
             try:
                 shutil.move(TEMP_ART / os.listdir(TEMP_ART)[0], ALBUM_ART)
@@ -332,65 +305,43 @@ class Song:
         print("\t✅ Set metadata")
 
     def _download_mp3(self):
-        ut.print_song_title(self.title, self.track_number, self.duration)
-        driver = webdriver.Chrome(service=SERVICE, options=options)
-        driver.get("https://ytmp3.la")
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.presence_of_element_located(
-                (By.ID, "v")
-            )
-        )
-        input_field = driver.find_element(By.ID, "v")
-        input_field.send_keys(self.youtube_url)
-        convert_button = driver.find_element(
-            By.XPATH,
-            "/html/body/form/div[2]/button[2]"
-        )
-        convert_button.click()
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.presence_of_element_located(
-                (By.XPATH, "/html/body/form/div[2]/button[1]")
-            )
-        )
-        download_button = driver.find_element(
-            By.XPATH,
-            "/html/body/form/div[2]/button[1]"
-        )
-        urls_before_click = [i.url for i in driver.requests]
-        download_button.click()
-        start_time = time.time()
-        while time.time() - start_time < TIMEOUT:
-            urls_after_click = [i.url for i in driver.requests]
-            new_urls = [i for i in urls_after_click if i not in urls_before_click]
-            for url in new_urls:
-                if ("mp3" in url) and ("download" in url) and ("google" not in url):
-                    download_url = url
-                    break
-            else:
-                time.sleep(0.5)
-                continue
-            break
-        else:
-            print(f"💀 Download exceeded {TIMEOUT} s and timed out")
-            exit()
-        response = requests.get(download_url)
-        response.raise_for_status()
-        with open(TEMP_ALBUM / self.mp3_file_name, "wb") as file:
-            file.write(response.content)
-        if not ORGANIZE_SONGS:
-            mp3_file_name_old = self.mp3_file_name
-            # increment number in filename if a song of the same name already
-            # exists in the SONGS directory (only if ORGANIZE_SONGS=false)
-            while self.mp3_file_name in os.listdir(SONGS):
-                split_filename = self.mp3_file_name.split(".")
-                split_filename[-2] = str(int(split_filename[-2]) + 1)
-                self.mp3_file_name = ".".join(split_filename)
-            shutil.move(
-                TEMP_ALBUM / mp3_file_name_old,
-                TEMP_ALBUM / self.mp3_file_name
-            )
-        driver.quit()
-        print("\t✅ Downloaded mp3")
+        try:
+            ut.print_song_title(self.title, self.track_number, self.duration)
+            ydl_opts = {
+                "format": "bestaudio/best",
+                # yt-dlp always adds .mp3 suffix
+                "outtmpl": str(TEMP_ALBUM / self.mp3_file_name).replace(".mp3", ""),
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": "192",
+                    }
+                ],
+                "quiet": True,
+                "no_warnings": True,
+                "noplaylist": True,
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([self.youtube_url])
+
+            if not ORGANIZE_SONGS:
+                mp3_file_name_old = self.mp3_file_name
+                # increment number in filename if a song of the same name already
+                # exists in the SONGS directory (only if ORGANIZE_SONGS=false)
+                while self.mp3_file_name in os.listdir(SONGS):
+                    split_filename = self.mp3_file_name.split(".")
+                    split_filename[-2] = str(int(split_filename[-2]) + 1)
+                    self.mp3_file_name = ".".join(split_filename)
+                shutil.move(
+                    TEMP_ALBUM / mp3_file_name_old,
+                    TEMP_ALBUM / self.mp3_file_name
+                )
+
+            print("\t✅ Downloaded mp3")
+        except:
+            print(f"💀 Failed to download .mp3 file")
+            raise
 
 
 if __name__ == "__main__":
