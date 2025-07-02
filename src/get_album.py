@@ -253,17 +253,17 @@ class Song:
                 (partial_ratio(self.artist.lower(), channel.lower()) < MIN_FUZZY)
             ):
                 warnings_video.append(
-                    "⚠️ Possibly not from official channel"
+                    "🟡 Possibly not from official channel"
                 )
                 warning_score += 1
             if partial_ratio(self.title.lower(), video_title.lower()) < MIN_FUZZY:
                 warnings_video.append(
-                    "⚠️ Song title not in video title"
+                    "🟠 Song title doesn't match video title"
                 )
                 warning_score += 2
             if abs(duration - self.duration) > DURATION_TOLERANCE:
                 warnings_video.append(
-                    f"⚠️ Duration outside {DURATION_TOLERANCE} s tolerance"
+                    f"🔴 Duration outside {DURATION_TOLERANCE} s tolerance"
                 )
                 warning_score += 4
             warnings_videos.append(warnings_video)
@@ -281,11 +281,11 @@ class Song:
         # falls back on the first result if no perfect result found
         self.youtube_url = f"https://www.youtube.com/watch?v={video_ids[0]}"
         if warning_scores[0] >= 4:
-            print(f"\t🔴 {self.youtube_url}")
+            print(f"\t⚠️ {self.youtube_url}")
         elif (warning_scores[0] >= 2) and (best_warning_score < 4):
-            print(f"\t🟠 {self.youtube_url}")
+            print(f"\t⚠️ {self.youtube_url}")
         elif warning_scores[0] == 1:
-            print(f"\t🟡 {self.youtube_url}")
+            print(f"\t⚠️ {self.youtube_url}")
         for warning in warnings_videos[0]:
             print(f"\t    {warning}")
 
