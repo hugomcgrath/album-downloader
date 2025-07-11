@@ -307,6 +307,8 @@ class Song:
                 "format": "bestaudio/best",
                 # yt-dlp always adds .mp3 suffix
                 "outtmpl": str(TEMP_ALBUM / self.mp3_file_name).replace(".mp3", ""),
+                "retries": 5,
+                "fragment_retries": 5,
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
