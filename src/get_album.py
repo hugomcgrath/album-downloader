@@ -247,11 +247,7 @@ class Song:
         ):
             warnings_video = []
             warning_score = 0
-            if (
-                (partial_ratio(self.title.lower(), description.lower()) < MIN_FUZZY) or
-                (partial_ratio(self.artist.lower(), description.lower()) < MIN_FUZZY) or
-                (partial_ratio(self.artist.lower(), channel.lower()) < MIN_FUZZY)
-            ):
+            if (partial_ratio(self.artist.lower(), channel.lower()) < MIN_FUZZY):
                 warnings_video.append(
                     "🟡 Possibly not from official channel"
                 )
