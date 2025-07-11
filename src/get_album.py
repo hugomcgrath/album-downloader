@@ -309,6 +309,8 @@ class Song:
                 "outtmpl": str(TEMP_ALBUM / self.mp3_file_name).replace(".mp3", ""),
                 "retries": 5,
                 "fragment_retries": 5,
+                "sleep_interval": 0,
+                "max_sleep_interval": 1,
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
