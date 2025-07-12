@@ -17,6 +17,8 @@ import argparse
 import datetime
 from zoneinfo import ZoneInfo
 import yt_dlp
+import time
+from numpy.random import uniform
 
 
 load_dotenv()
@@ -303,12 +305,13 @@ class Song:
     def _download_mp3(self):
         try:
             ut.print_song_title(self.title, self.track_number, self.duration)
+            N_RETRIES = 5
             ydl_opts = {
                 "format": "bestaudio/best",
                 # yt-dlp always adds .mp3 suffix
                 "outtmpl": str(TEMP_ALBUM / self.mp3_file_name).replace(".mp3", ""),
-                "retries": 5,
-                "fragment_retries": 5,
+                "retries": N_RETRIES,
+                "fragment_retries": N_RETRIES,
                 "sleep_interval": 0,
                 "max_sleep_interval": 1,
                 "postprocessors": [
@@ -322,8 +325,18 @@ class Song:
                 "no_warnings": True,
                 "noplaylist": True,
             }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([self.youtube_url])
+            while N_RETRIES > 0:
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([self.youtube_url])
+                    break
+                except:
+                    N_RETRIES -= 1
+                    print(f"Retrying, {N_RETRIES} retries left")
+                    sleep_time = uniform(0, 1)
+                    print(f"Sleeping {sleep_time:.2f} s")
+                    time.sleep(sleep_time)
+                    continue
 
             if not ORGANIZE_SONGS:
                 mp3_file_name_old = self.mp3_file_name
