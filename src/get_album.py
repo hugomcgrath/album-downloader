@@ -43,9 +43,6 @@ THUMBNAIL_SIZE = (500, 500)
 DURATION_TOLERANCE = 10 # s
 MIN_FUZZY = 90
 
-youtube = build("youtube", "v3", developerKey=YT_API_KEY)
-mbz.set_useragent("testing", "0.1")
-
 
 class Album:
     def __init__(
@@ -359,6 +356,9 @@ class Song:
 
 if __name__ == "__main__":
     try:
+        youtube = build("youtube", "v3", developerKey=YT_API_KEY)
+        mbz.set_useragent("testing", "0.1")
+
         parser = argparse.ArgumentParser(
             description="Download an album by artist and album name or MusicBrainz release ID/release page URL"
         )
