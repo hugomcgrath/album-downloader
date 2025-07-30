@@ -408,6 +408,7 @@ if __name__ == "__main__":
                 album.release_id = ut.validate_release_id(parser, user_input_release_id)
                 ut.print_release_id(album.release_id)
                 album.get_album_art()
+                album.track_list = []
                 album.get_track_list()
             else:
                 continue
