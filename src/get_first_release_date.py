@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 import eyed3
-from eyed3.core import Date
 
 
 def get_first_release_date():
@@ -15,8 +14,8 @@ def get_first_release_date():
         for album_dir in os.listdir(SONGS / artist_dir):
             mp3_dir = SONGS / artist_dir / album_dir / "songs"
             for i, song in enumerate(os.listdir(mp3_dir)):
+                audio_file = eyed3.load(mp3_dir / song)
                 if i == 0:
-                    audio_file = eyed3.load(mp3_dir / song)
                     artist = audio_file.tag.album_artist
                     album = audio_file.tag.album
                     release_group_data = mbz.search_release_groups(
@@ -24,9 +23,8 @@ def get_first_release_date():
                         releasegroup=album,
                         limit=1
                     )["release-group-list"][0]
-                    first_release_date = release_group_data['first-release-date']
-                    first_release_date = Date(*map(int, first_release_date.split("-")))
-                audio_file.tag.recording_date = first_release_date
+                    first_release_date = release_group_data["first-release-date"]
+                audio_file.tag.original_release_date = first_release_date
                 audio_file.tag.save()
             n_spaces = 70 - len(str(first_release_date)) - len(artist) - len(album)
             spaces = " " * n_spaces
