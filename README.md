@@ -1,16 +1,16 @@
 # 💿 Album downloader (Looking for a good name!)
 
-This tool was born of my stubborn refusal to use music streaming services like a normal person. I don't like that more and more services use the subscription model and I don't want to support it. The alternatives often aren't great. The way I did things before, I would use an online [YouTube to .mp3 convertor](https://ytmp3.as/) and paste in YouTube links to download the .mp3 files one by one. I would then usually have to rename the file and manually set the metadata. As you can imagine, this was very frustrating and often I didn't bother. But every incorrectly set metadata tag, every wrong album art image slowly nibbled away at my sanity until one day I had to do something about it. Since I enjoy slapping together mediocre python code, I slapped together (with only moderate use of ChatGPT) a solution to all my music related problems - an album downloader!
+This tool was born of my stubborn refusal to use music streaming services like a normal person. I don't like that more and more services use the subscription model, and I don't want to support it. The alternatives often aren't great. The way I did things before, I would use an online [YouTube to .mp3 converter](https://ytmp3.as/) and paste in YouTube links to download the .mp3 files one by one. I would then usually have to rename the file and manually set the metadata. As you can imagine, this was very frustrating and often I didn't bother. But every incorrectly set metadata tag, every wrong album art image slowly nibbled away at my sanity until one day I had to do something about it. Since I enjoy slapping together mediocre Python code, I slapped together (with only moderate use of ChatGPT) a solution to all my music-related problems—an album downloader!
 
-Another frustration I noticed was that while listening to randomly shuffled songs I would just skip through many of them to avoid the emotinal whiplash of [*Down in a Hole*](https://www.youtube.com/watch?v=f8hT3oDDf6c) followed by [*Walking on Sunshine*](https://www.youtube.com/watch?v=iPUmE-tne5U) (or the other way around). I find that listening to full albums is quite a different and rewarding experience since an album is usually thematically consistent. I want to push myself more toward this way of engaging with music. When selecting music to download I would often cherry pick a handfull of songs while completely ignoring the rest of an artists œuvre and making myself listen to a full album gives me a better idea about an artist as a whole.
+Another frustration I noticed was that while listening to randomly shuffled songs I would just skip through many of them to avoid the emotional whiplash of [*Down in a Hole*](https://www.youtube.com/watch?v=f8hT3oDDf6c) followed by [*Walking on Sunshine*](https://www.youtube.com/watch?v=iPUmE-tne5U) (or the other way around). I find that listening to full albums is quite a different and rewarding experience since an album is usually thematically consistent. I want to push myself more toward this way of engaging with music. When selecting music to download I would often cherry pick a handful of songs while completely ignoring the rest of an artist's œuvre—making myself listen to a full album gives me a better idea about an artist as a whole.
 
-As a final thought, I realize this is probably not very nice towards artists, so I ask you to consider buying some physical music once in a while. Though it is extremely impractical (so I don't do it that often), I do very much enjoy listening to vinyl records. Putting on a vinyl and then having to change sides is a little ritual of sorts. Sometimes it's nice to do things slowly, it gives you a chance to think. I can't speak for others, only for myself, but I suspect we often try to run away from or silence our thoughts, to keep moving forward, rushing ahead. There is no prize waiting for us at the finish line. So why not sit back and enjoy some music, one of the genuine joys of life?
+As a final thought, I realise this is probably not very nice toward artists, so I ask you to consider buying some physical music once in a while. Though it is extremely impractical (so I don't do it that often), I do very much enjoy listening to vinyl records. Putting on a vinyl and then having to change sides is a little ritual of sorts. Sometimes it's nice to do things slowly, it gives you a chance to think. I can't speak for others, only for myself, but I suspect we often try to run away from or silence our thoughts, to keep moving forward, rushing ahead. There is no prize waiting for us at the finish line. So why not sit back and enjoy some music, one of the genuine joys of life?
 
 I hope I can get some of you to come around to this way of thinking about music and taking things a little more slowly in life in general. And of course it will make me happy if someone finds this tool useful. Thank you for reading my manifesto.
 
 ## How it works
 
-The user inputs the artist name and album title OR the Musicbrainz release URL and the code does the rest. First it finds the album tracklist and album art from the [Musicbrains database](https://musicbrainz.org/), then it uses the [YouTube Data API](https://developers.google.com/youtube/v3) to search for the songs and tries to get the best match, then downloads the .mp3 files using ~~the [YouTube to .mp3 convertor](https://ytmp3.as/)~~ [yt-dlp](https://github.com/yt-dlp/yt-dlp) (big improvement!) and finally sets the correct metadata including album art for each .mp3 file! The .mp3 files and album art are then saved in the location you specify in the ```.env``` file. You can then just copy the .mp3 files to your phone and any music player app should be able to recognise the metadata and sort everything correctly. I strongly recommend the [Oto Music Player](https://play.google.com/store/apps/details?id=com.piyush.music&hl=cs), it doesn't show adds!
+The user inputs the artist name and album title OR the Musicbrainz release URL and the code does the rest. First it finds the album tracklist and album art from the [Musicbrains database](https://musicbrainz.org/), then it uses the [YouTube Data API](https://developers.google.com/youtube/v3) to search for the songs and tries to get the best match, then downloads the .mp3 files using ~~the [YouTube to .mp3 converter](https://ytmp3.as/)~~ [yt-dlp](https://github.com/yt-dlp/yt-dlp) (big improvement!) and finally sets the correct metadata including album art for each .mp3 file! The .mp3 files and album art are then saved in the location you specify in the ```.env``` file. You can then just copy the .mp3 files to your phone and any music player app should be able to recognise the metadata and sort everything correctly. I strongly recommend the [Oto Music Player](https://play.google.com/store/apps/details?id=com.piyush.music&hl=cs), it doesn't show adds!
 
 ## Installation
 
@@ -77,11 +77,19 @@ Another problem is that YouTube search is not perfect, sometimes the returned UR
 
 The program should hopefully work on all PC platforms, but I only tried it out on Linux so there may be some issues I missed.
 
-The Musicbrainz database may not have all Czech artists you may be interested in.
+The Musicbrainz database may not have all Czech artists you may be interested in (or artists of other nationalities for that matter).
 
 Please let me know if you encounter any bugs and I'll be happy to hear any suggestions on how to improve the album downloader (and suggestions for a good name). Enjoy! 🎷🎷🎷
 
-## ⚠️ Possibly breaking change ⚠️
+## ⚠️ Now first release date is added to metadata ⚠️
+
+```src/get_album.py``` should now also set the first release date metadata for newly downloaded songs.
+
+### What do I have to do?
+
+If you want to add first release date metadata to your already downloaded songs, run the script ```src/add_first_release_date.py```. This should work as long as you use the [new directory structure](#️-change-in-directory-structure-️).
+
+## ⚠️ Change in directory structure ⚠️
 
 I have changed the way songs are saved to the ```SONGS_DIRECTORY```, now instead of downloading everything into one flat directory, it is structured the following way: ```SONGS_DIRECTORY/artist/album_title/songs/track_number.song_title.mp3``` and the ```ALBUM_ART_DIRECTORY``` is moved to ```SONGS_DIRECTORY/artist/album_title/album_art/album_title.jpg```.
 
