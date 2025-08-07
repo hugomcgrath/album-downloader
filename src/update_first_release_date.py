@@ -5,7 +5,7 @@ from pathlib import Path
 import eyed3
 
 
-def get_first_release_date():
+def update_first_release_date():
     mbz.set_useragent("testing", "0.1")
     load_dotenv()
     SONGS = Path(os.getenv("SONGS_DIRECTORY"))
@@ -31,4 +31,4 @@ def get_first_release_date():
             print(f"✅ {artist}: {album}{spaces}{first_release_date}")
 
 if __name__ == "__main__":
-    get_first_release_date()
+    update_first_release_date()
