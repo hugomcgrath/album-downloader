@@ -54,6 +54,7 @@ class Album:
         self.artist = artist
         self.album_title = album_title
         self.release_id = release_id
+        self.first_release_date = None
         self.album_art_path = None
         self.track_list = []
 
@@ -97,6 +98,17 @@ class Album:
                 continue
         # if can't find album art, default to first release
         self.release_id = releases[0]["id"]
+
+    def get_first_release_date(self):
+        try:
+            release_group_data = mbz.search_release_groups(
+                artist=self.artist,
+                releasegroup=self.album_title,
+                limit=1,
+            )["release-group-list"][0]
+            self.first_release_date = release_group_data["first-release-date"]
+        except:
+            print("❌ First release date not available")
 
     def get_album_art(self):
         if self._has_album_art():
@@ -144,6 +156,7 @@ class Album:
                         duration,
                         self.artist,
                         self.album_title,
+                        self.first_release_date,
                         self.album_art_path,
                     )
                 )
@@ -190,13 +203,15 @@ class Song:
         duration,
         artist,
         album_title,
-        album_art
+        first_release_date,
+        album_art,
     ):
         self.title = title
         self.track_number = track_number
         self.duration = duration
         self.artist = artist
         self.album_title = album_title
+        self.first_release_date = first_release_date
         self.album_art_path = album_art
         self.youtube_url = None
         if ORGANIZE_SONGS:
@@ -285,18 +300,19 @@ class Song:
             print(f"\t    {warning}")
 
     def _set_metadata(self):
-        audiofile = eyed3.load(TEMP_ALBUM / self.mp3_file_name)
-        audiofile.tag.clear()
-        audiofile.initTag()
-        audiofile.tag.title = self.title
-        audiofile.tag.artist = self.artist
-        audiofile.tag.album_artist = self.artist
-        audiofile.tag.album = self.album_title
-        audiofile.tag.track_num = self.track_number
+        audio_file = eyed3.load(TEMP_ALBUM / self.mp3_file_name)
+        audio_file.tag.clear()
+        audio_file.initTag()
+        audio_file.tag.title = self.title
+        audio_file.tag.artist = self.artist
+        audio_file.tag.album_artist = self.artist
+        audio_file.tag.album = self.album_title
+        audio_file.tag.original_release_date = self.first_release_date
+        audio_file.tag.track_num = self.track_number
         if self.album_art_path is not None:
             with open(self.album_art_path, "rb") as image:
-                audiofile.tag.images.set(3, image.read(), "image/jpeg")
-        audiofile.tag.save()
+                audio_file.tag.images.set(3, image.read(), "image/jpeg")
+        audio_file.tag.save()
         print("\t✅ Set metadata")
 
     def _download_mp3(self):
@@ -388,8 +404,10 @@ if __name__ == "__main__":
             album.get_artist_and_album_title()
         else:
             album.get_artist_and_album_title()
-        print(f"🎸 Artist:\t{album.artist}")
-        print(f"💿 Album:\t{album.album_title}")
+        album.get_first_release_date()
+        print(f"🎸 Artist:\t\t{album.artist}")
+        print(f"💿 Album:\t\t{album.album_title}")
+        print(f"📅 First release date:\t{album.first_release_date}")
         ut.print_release_id(album.release_id)
         album.get_album_art()
         album.get_track_list()
