@@ -18,14 +18,17 @@ def update_first_release_date():
                 if i == 0:
                     artist = audio_file.tag.album_artist
                     album = audio_file.tag.album
-                    release_group_data = mbz.search_release_groups(
-                        artist=artist,
-                        releasegroup=album,
-                        limit=1
-                    )["release-group-list"][0]
-                    first_release_date = release_group_data["first-release-date"]
+                    try:
+                        release_group_data = mbz.search_release_groups(
+                            artist=artist,
+                            releasegroup=album,
+                            limit=1
+                        )["release-group-list"][0]
+                        first_release_date = release_group_data["first-release-date"]
+                    except:
+                        print("❌ First release date not available")
                 audio_file.tag.original_release_date = first_release_date
-                audio_file.tag.save()
+                audio_file.tag.save(version=(2, 4, 0))
             n_spaces = 70 - len(str(first_release_date)) - len(artist) - len(album)
             spaces = " " * n_spaces
             print(f"✅ {artist}: {album}{spaces}{first_release_date}")
