@@ -1,6 +1,7 @@
 import uuid
 import os
 from dotenv import load_dotenv
+import math
 
 
 def sanitize(filename):
@@ -27,7 +28,7 @@ def sanitize(filename):
 
 def duration_s_to_min_s(duration_s):
     duration_min = int(duration_s // 60)
-    duration_s_remainder = round(duration_s % 60)
+    duration_s_remainder = math.floor(duration_s % 60)
     duration_min_s = f"{duration_min:02}:{duration_s_remainder:02}"
     return duration_min_s
 
