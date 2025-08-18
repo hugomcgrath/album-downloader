@@ -107,6 +107,7 @@ class Album:
                 limit=1,
             )["release-group-list"][0]
             self.first_release_date = release_group_data["first-release-date"]
+            ut.print_first_release_date(self.first_release_date)
         except:
             print("❌ First release date not available")
 
@@ -174,6 +175,7 @@ class Album:
         if ORGANIZE_SONGS:
             ALBUM_DIR = SONGS / ut.sanitize(self.artist) / ut.sanitize(self.album_title)
             SONGS_ORGANIZED = ALBUM_DIR / "songs"
+            shutil.rmtree(SONGS_ORGANIZED, ignore_errors=True)
             SONGS_ORGANIZED.mkdir(parents=True, exist_ok=True)
             ALBUM_ART_ORGANIZED = ALBUM_DIR / "album_art"
             ALBUM_ART_ORGANIZED.mkdir(parents=True, exist_ok=True)
@@ -402,24 +404,22 @@ if __name__ == "__main__":
             album.get_artist_and_album_title()
         else:
             album.get_artist_and_album_title()
-        album.get_first_release_date()
         print(f"🎸 Artist:\t\t{album.artist}")
         print(f"💿 Album:\t\t{album.album_title}")
-        print(f"📅 First release date:\t{album.first_release_date}")
         ut.print_release_id(album.release_id)
         album.get_album_art()
         album.get_track_list()
 
         while True:
-            user_input_urls = input(
-                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify Musicbrainz release ID: "
+            user_input = input(
+                "📅 Get first release date? [y]es/(n)o/(m)odify Musicbrainz release ID: "
             ).lower()
-            if user_input_urls == "y" or user_input_urls == "":
-                album.get_youtube_urls()
+            if user_input == "y" or user_input == "":
+                album.get_first_release_date()
                 break
-            elif user_input_urls == "n":
+            elif user_input == "n":
                 exit()
-            elif user_input_urls == "m":
+            elif user_input == "m":
                 user_input_release_id = input("Enter new Musicbrainz release ID or URL: ")
                 album.release_id = ut.validate_release_id(parser, user_input_release_id)
                 ut.print_release_id(album.release_id)
@@ -430,15 +430,31 @@ if __name__ == "__main__":
                 continue
 
         while True:
-            user_input_download = input(
+            user_input = input(
+                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify first release date: "
+            ).lower()
+            if user_input == "y" or user_input == "":
+                album.get_youtube_urls()
+                break
+            elif user_input == "n":
+                exit()
+            elif user_input == "m":
+                user_input_first_release_date = input("Enter new first release date (in YYYY-MM-DD format): ")
+                album.first_release_date = user_input_first_release_date
+                ut.print_first_release_date(album.first_release_date)
+            else:
+                continue
+
+        while True:
+            user_input = input(
                 "🎶 Download songs? [y]es/(n)o/(m)odify YouTube URLs: "
             ).lower()
-            if user_input_download == "y" or user_input_download == "":
+            if user_input == "y" or user_input == "":
                 album.download_mp3s()
                 break
-            elif user_input_download == "n":
+            elif user_input == "n":
                 exit()
-            elif user_input_download == "m":
+            elif user_input == "m":
                 while True:
                     user_input_track_number = input(
                         "Enter track number of song with URL you want to modify/(c)ancel: "

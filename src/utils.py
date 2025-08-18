@@ -49,6 +49,9 @@ def print_release_id(release_id):
     print("🌐 Musicbrainz release page:")
     print(f"    🔗 https://www.musicbrainz.org/release/{release_id}")
 
+def print_first_release_date(first_release_date):
+    print(f"📅 First release date:\t{first_release_date}")
+
 def validate_release_id(parser, release_id_input):
     if release_id_input is not None:
         try:
