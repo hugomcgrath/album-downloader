@@ -372,6 +372,8 @@ class Song:
 
 if __name__ == "__main__":
     try:
+        ut.update_yt_dlp()
+
         youtube = build("youtube", "v3", developerKey=YT_API_KEY)
         mbz.set_useragent("testing", "0.1")
 

@@ -2,6 +2,8 @@ import uuid
 import os
 from dotenv import load_dotenv
 import math
+import subprocess
+import importlib
 
 
 def sanitize(filename):
@@ -79,3 +81,22 @@ def load_organize_songs():
     else:
         print("💀 Set ORGANIZE_SONGS variable in .env file to either true or false")
         exit()
+
+def update_yt_dlp():
+    print("🔄 Checking for yt-dlp updates...")
+    before = importlib.metadata.version("yt-dlp")
+    subprocess.run(
+        "pip install --upgrade yt-dlp",
+        shell=True
+    )
+    after = importlib.metadata.version("yt-dlp")
+    if before != after:
+        subprocess.run(
+            "conda env update --prune -f ../environment.yaml",
+            shell=True
+        )
+    subprocess.run(
+        "conda env export | grep -v prefix > ../environment.yaml",
+        shell=True
+    )
+    print("✅ Everything is up to date")
