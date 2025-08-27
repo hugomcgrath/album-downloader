@@ -26,7 +26,22 @@ def update_first_release_date():
                         )["release-group-list"][0]
                         first_release_date = release_group_data["first-release-date"]
                     except:
-                        print("❌ First release date not available")
+                        first_release_date = ""
+                    while True:
+                        print(f"{artist}: {album}")
+                        print(f"Found first release date: {first_release_date}")
+                        user_input = input(
+                            f"Continue? [y]es/(n)o/(m)odify first release date: "
+                        ).lower()
+                        if user_input == "y" or user_input == "":
+                            break
+                        elif user_input == "n":
+                            exit()
+                        elif user_input == "m":
+                            user_input_first_release_date = input("Enter new first release date (in YYYY-MM-DD format): ")
+                            first_release_date = user_input_first_release_date
+                        else:
+                            continue
                 audio_file.tag.original_release_date = first_release_date
                 audio_file.tag.save(version=(2, 4, 0))
             n_spaces = 70 - len(str(first_release_date)) - len(artist) - len(album)
