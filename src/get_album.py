@@ -314,7 +314,7 @@ class Song:
         if self.album_art_path is not None:
             with open(self.album_art_path, "rb") as image:
                 audio_file.tag.images.set(3, image.read(), "image/jpeg")
-        audio_file.tag.save()
+        audio_file.tag.save(version=(2, 4, 0))
         print("\t✅ Set metadata")
 
     def _download_mp3(self):
