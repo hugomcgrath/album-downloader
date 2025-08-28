@@ -410,7 +410,6 @@ if __name__ == "__main__":
         print(f"💿 Album:\t\t{album.album_title}")
         ut.print_release_id(album.release_id)
         album.get_album_art()
-        album.get_track_list()
 
         while True:
             user_input = input(
@@ -433,10 +432,10 @@ if __name__ == "__main__":
 
         while True:
             user_input = input(
-                "🔗 Get YouTube URLs? [y]es/(n)o/(m)odify first release date: "
+                "📝 Get tracklist? [y]es/(n)o/(m)odify first release date: "
             ).lower()
             if user_input == "y" or user_input == "":
-                album.get_youtube_urls()
+                album.get_track_list()
                 break
             elif user_input == "n":
                 exit()
@@ -444,6 +443,18 @@ if __name__ == "__main__":
                 user_input_first_release_date = input("Enter new first release date (in YYYY-MM-DD format): ")
                 album.first_release_date = user_input_first_release_date
                 ut.print_first_release_date(album.first_release_date)
+            else:
+                continue
+
+        while True:
+            user_input = input(
+                "🔗 Get YouTube URLs? [y]es/(n)o: "
+            ).lower()
+            if user_input == "y" or user_input == "":
+                album.get_youtube_urls()
+                break
+            elif user_input == "n":
+                exit()
             else:
                 continue
 
