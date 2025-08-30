@@ -87,16 +87,13 @@ def update_yt_dlp():
     before = importlib.metadata.version("yt-dlp")
     subprocess.run(
         "pip install --upgrade yt-dlp",
-        shell=True
+        shell=True,
+        check=True,
     )
     after = importlib.metadata.version("yt-dlp")
     if before != after:
         subprocess.run(
-            "conda env update --prune -f ../environment.yaml",
-            shell=True
+            ["bash", "update_environment.sh"],
+            check=True
         )
-    subprocess.run(
-        "conda env export | grep -v prefix > ../environment.yaml",
-        shell=True
-    )
     print("✅ Everything is up to date")
