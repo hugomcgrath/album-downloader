@@ -6,4 +6,4 @@ album_art/
 todo.txt
 *.ipynb
 sandbox.py
-*.sh
+copy*.sh
